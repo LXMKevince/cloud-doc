@@ -1,3 +1,11 @@
+<!--
+ * @Author: your name
+ * @Date: 2020-01-11 16:56:32
+ * @LastEditTime: 2020-01-11 23:22:21
+ * @LastEditors: your name
+ * @Description: In User Settings Edit
+ * @FilePath: \cloud-doc\README.md
+ -->
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
@@ -66,3 +74,5 @@ This section has moved here: https://facebook.github.io/create-react-app/docs/de
 ### `yarn build` fails to minify
 
 This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+
+### electron 结合 react
