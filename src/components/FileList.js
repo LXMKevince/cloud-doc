@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2020-01-12 15:48:04
- * @LastEditTime : 2020-01-12 18:07:16
+ * @LastEditTime : 2020-01-13 23:43:38
  * @LastEditors  : Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \cloud-doc\src\components\FileList.js
@@ -61,6 +61,14 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     // }
   })
 
+  useEffect(() => {
+    const newFile = files.find( file => file.isNew )
+    if(newFile) {
+      setEditStatus(newFile.id)
+      setEditValue(newFile.title)
+    }
+  }, [files])
+
 
   return (
     <ul className="list-group list-group-flush file-list">
@@ -70,7 +78,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
             className="list-group-item bg-light d-flex align-items-center row file-item mx-0"
             key={file.id}
           >
-            { (file.id !== editStatus) &&
+            { (file.id !== editStatus && !file.isNew) &&
               <>
                 <span className="col-2">
                   <FontAwesomeIcon
@@ -105,10 +113,11 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                 </button>
               </>
             }
-            { (file.id === editStatus) && 
+            { ((file.id === editStatus) || file.isNew) && 
               <>
                <input 
                  className="form-control col-10"
+                 placeholder="请输入文件名称"
                  value={editValue}
                  onChange={(e) => {setEditValue(e.target.value)}}
                />

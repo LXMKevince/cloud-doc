@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2020-01-12 17:55:41
- * @LastEditTime : 2020-01-12 19:14:42
+ * @LastEditTime : 2020-01-13 22:04:31
  * @LastEditors  : Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \cloud-doc\src\components\TabList.js
@@ -13,7 +13,7 @@ import PropTypes from 'prop-types'
 import classNames from 'classnames'
 import './TabList.scss'
 
-const TabList = ({ files, activeId, unsaveIds, onTabClick, onCloseTab }) => {
+const TabList = ({ files, activeId, unsaveIds, onTabClick, onTabClose }) => {
   return (
     <ul className="nav nav-pills tablist-component">
       { files.map( file => { 
@@ -33,7 +33,7 @@ const TabList = ({ files, activeId, unsaveIds, onTabClick, onCloseTab }) => {
               { file.title }
               <span 
                 className="ml-2 close-icon"
-                onClick={(e) => {e.stopPropagation(); onCloseTab(file.id)}}  
+                onClick={(e) => {e.stopPropagation(); onTabClose(file.id)}}  
               >
                 <FontAwesomeIcon
                   icon={faTimes} 
@@ -53,7 +53,7 @@ TabList.propTypes = {
   activeId: PropTypes.string,
   unsaveIds: PropTypes.array,
   onTabClick: PropTypes.func,
-  onCloseTab: PropTypes.func
+  onTabClose: PropTypes.func
 }
 
 TabList.defaultProps = {

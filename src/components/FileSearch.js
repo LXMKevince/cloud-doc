@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2020-01-11 20:38:59
- * @LastEditTime : 2020-01-12 17:43:03
+ * @LastEditTime : 2020-01-13 22:51:17
  * @LastEditors  : Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \cloud-doc\src\components\FileSearch.js
@@ -28,6 +28,8 @@ const FileSearch = ({ title, onFileSearch }) => {
     // e.preventDefault()
     setInputActive(false)
     setInputValue('')
+    // 关闭搜索后，新增一个空的搜索进行数据还原
+    onFileSearch('')
   }
 
   useEffect(() => {
