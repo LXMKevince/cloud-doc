@@ -1,12 +1,12 @@
 /*
  * @Author: your name
  * @Date: 2020-01-12 15:48:04
- * @LastEditTime : 2020-01-13 23:43:38
+ * @LastEditTime : 2020-01-14 23:11:32
  * @LastEditors  : Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \cloud-doc\src\components\FileList.js
  */
-import React, { useState, useEffect} from 'react'
+import React, { useState, useEffect, useRef} from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEdit, faTrash, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { faMarkdown } from '@fortawesome/free-brands-svg-icons'
@@ -20,23 +20,27 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
 
   const enterPressed = useKeyPress(13)
   const escPressed = useKeyPress(27)
-
+  
   // 定义关闭方法
-  const closeSearch = () => {
+  const closeSearch = (editItem) => {
     //e.preventDefault()
     setEditStatus(false)
     setEditValue('')
+    // 如果有isNew属性，就删除此条数据
+    if(editItem.isNew) {
+      onFileDelete(editItem.id)
+    }
   }
 
   useEffect(() => {
-    if( enterPressed && editStatus ) {
-      const editItem = files.find( file => file.id === editStatus )
+    const editItem = files.find( file => file.id === editStatus )
+    if( enterPressed && editStatus && editValue.trim() !== '') {
       onSaveEdit(editItem.id, editValue)
       setEditStatus(false)
       setEditValue('')
     }
     if(escPressed && editStatus) {
-      closeSearch()
+      closeSearch(editItem)
     }
 
     // const handleInputEvent = (e) => {
@@ -68,7 +72,6 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
       setEditValue(newFile.title)
     }
   }, [files])
-
 
   return (
     <ul className="list-group list-group-flush file-list">
@@ -124,7 +127,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                <button
                  type="button"
                  className="icon-btn col-2"
-                 onClick={closeSearch}
+                 onClick={() => {closeSearch(file)}}
                >
                  <FontAwesomeIcon
                    title="关闭"

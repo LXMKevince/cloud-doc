@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2020-01-11 16:56:32
- * @LastEditTime : 2020-01-13 23:23:44
+ * @LastEditTime : 2020-01-14 23:54:27
  * @LastEditors  : Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \cloud-doc\src\App.js
@@ -20,21 +20,30 @@ import FileList from './components/FileList'
 import BottomBtn from './components/BottomBtn'
 import TabList from './components/TabList'
 import defaultFiles from './utils/defaultFiles'
+import { flattenArr, objToArr } from './utils/helper'
 
 function App() {
-  const [ files, setFiles ] = useState(defaultFiles)
+  const [ files, setFiles ] = useState(flattenArr(defaultFiles))
+  const filesArr = objToArr(files)
   const [ activeFileID, setActiveFileID ] = useState('')
   const [ openedFileIDs, setOpenedFileIDs ] = useState([])
   const [ unsavedFileIDs, setUnsavedFileIDs ] = useState([])
   const [ searchedFiles, setSearchedFiles ] = useState([])
 
   // 根据 ID 找到打开的文件集
+  // const openedFiles = openedFileIDs.map( openID => {
+  //   return files.find( file => file.id === openID)
+  // } )
   const openedFiles = openedFileIDs.map( openID => {
-    return files.find( file => file.id === openID)
-  } )
+    return files[openID]
+  })
 
   // 根虎 ID 找到激活状态的文件
-  const activeFile = files.find( file => file.id === activeFileID)
+  // const activeFile = files.find( file => file.id === activeFileID)
+  const activeFile = files[activeFileID]
+
+  // const fileListArr = (searchedFiles.length > 0) ? searchedFiles : files
+  const fileListArr = (searchedFiles.length > 0) ? searchedFiles : filesArr
 
   const fileClick = (fileID) => {
     // 设置当前激活状态的文件
@@ -62,62 +71,86 @@ function App() {
     }
   }
 
-  const fileChange = (id, value) => {
-    // 循环数组，更新数据
-    const newFiles = files.map( file => {
-      if(file.id === id) {
-        file.body = value
-      }
-      return file
-    })
-    setFiles(newFiles)
-    // 更新 unsavedFileIDs 
-    if(!unsavedFileIDs.includes(id)) {
-      setUnsavedFileIDs([ ...unsavedFileIDs, id ])
-    }
-
-  }
-
+  // const deleteFile = (id) => {
+  //   // 从数组中过滤掉此 ID
+  //   const newFiles = files.filter( file => file.id !== id)
+  //   setFiles(newFiles)
+  //   // 关闭对应 tab
+  //   tabClose(id)
+  // }
   const deleteFile = (id) => {
-    // 从数组中过滤掉此 ID
-    const newFiles = files.filter( file => file.id !== id)
-    setFiles(newFiles)
+    // 从对象中删除
+    delete files[id]
+    setFiles(files)
     // 关闭对应 tab
     tabClose(id)
   }
 
   const updateFileName = (id, title) => {
     // 循环
-    const newFiles = files.map( file => {
-      if(file.id === id) {
-        file.title = title
-      }
-      return file
-    })
-    setFiles(newFiles)
+    // const newFiles = files.map( file => {
+    //   if(file.id === id) {
+    //     file.title = title
+    //     file.isNew = false
+    //   }
+    //   return file
+    // })
+    // setFiles(newFiles)
+    const modifiedFile = { ...files[id], title, isNew: false }
+    setFiles({ ...files, [id]: modifiedFile })
+  }
+
+  // const fileChange = (id, value) => {
+  //   // 循环数组，更新数据
+  //   const newFiles = files.map( file => {
+  //     if(file.id === id) {
+  //       file.body = value
+  //     }
+  //     return file
+  //   })
+  //   setFiles(newFiles)
+  //   // 更新 unsavedFileIDs 
+  //   if(!unsavedFileIDs.includes(id)) {
+  //     setUnsavedFileIDs([ ...unsavedFileIDs, id ])
+  //   }
+  // }
+  const fileChange = (id, value) => {
+    const newFile = { ...files[id], body: value }
+    setFiles({ ...files, [id]: newFile })
+    // 更新 unsavedFileIDs 
+    if(!unsavedFileIDs.includes(id)) {
+      setUnsavedFileIDs([ ...unsavedFileIDs, id ])
+    }
   }
 
   const fileSearch = (keyword) => {
     // 根据关键字过滤
-    const newFiles = files.filter( file => file.title.includes(keyword))
+    // const newFiles = files.filter( file => file.title.includes(keyword))
+    const newFiles = filesArr.filter( file => file.title.includes(keyword))
     setSearchedFiles(newFiles)
   }
 
-  const fileListArr = (searchedFiles.length > 0) ? searchedFiles : files
-
   const createNewFile = () => {
     const newID = uuidv4()
-    const newFiles = [
-      ...files,
-      {
+    // const newFiles = [
+    //   ...files,
+    //   {
+    //     id: newID,
+    //     title: '',
+    //     body: '## 请输入MarkDown',
+    //     createdAt: new Date().getTime(),
+    //     isNew: true
+    //   }
+    // ]
+    // setFiles(newFiles)
+    const newFile = {
         id: newID,
         title: '',
         body: '## 请输入MarkDown',
         createdAt: new Date().getTime(),
         isNew: true
-      }
-    ]
-    setFiles(newFiles)
+    }
+    setFiles({ ...files, [newID]: newFile })
   }  
 
   return (
