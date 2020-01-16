@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2020-01-11 16:56:32
- * @LastEditTime : 2020-01-14 23:54:27
+ * @LastEditTime : 2020-01-16 23:56:35
  * @LastEditors  : Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \cloud-doc\src\App.js
@@ -19,16 +19,43 @@ import FileSearch from './components/FileSearch'
 import FileList from './components/FileList'
 import BottomBtn from './components/BottomBtn'
 import TabList from './components/TabList'
+
 import defaultFiles from './utils/defaultFiles'
 import { flattenArr, objToArr } from './utils/helper'
+import fileHelper from './utils/fileHelper'
+
+// 引用 node.js 模块
+const { join } = window.require('path')
+const { remote } = window.require('electron')
+const Store = window.require('electron-store')
+const fileStore = new Store({'name': 'files Data'})
+
+const saveFilesToStore = (files) => {
+  // 我不需要对所有数据做持久化处理
+  const filesStoreObj = objToArr(files).reduce((result, file) => {
+    const { id, path, title, createdAt } = file
+    result[id] = {
+      id,
+      path,
+      title,
+      createdAt
+    }
+    return result
+  }, {})
+  fileStore.set('files', filesStoreObj)
+}
 
 function App() {
-  const [ files, setFiles ] = useState(flattenArr(defaultFiles))
+  // const [ files, setFiles ] = useState(flattenArr(defaultFiles))
+  const [ files, setFiles ] = useState(fileStore.get('files') || {})
   const filesArr = objToArr(files)
   const [ activeFileID, setActiveFileID ] = useState('')
   const [ openedFileIDs, setOpenedFileIDs ] = useState([])
   const [ unsavedFileIDs, setUnsavedFileIDs ] = useState([])
   const [ searchedFiles, setSearchedFiles ] = useState([])
+
+  // 在渲染进程中使用主进程中的getPath方法
+  const savedLocation = remote.app.getPath('documents')
 
   // 根据 ID 找到打开的文件集
   // const openedFiles = openedFileIDs.map( openID => {
@@ -79,14 +106,22 @@ function App() {
   //   tabClose(id)
   // }
   const deleteFile = (id) => {
-    // 从对象中删除
-    delete files[id]
-    setFiles(files)
-    // 关闭对应 tab
-    tabClose(id)
+    if(files[id].isNew) {
+      // delete files[id]
+      const { [id]: value, ...afterDelete } = files
+      setFiles(afterDelete)
+    } else{
+      fileHelper.deleteFile(files[id].path).then(() => {
+        // delete files[id]
+        const { [id]: value, ...afterDelete } = files
+        setFiles(afterDelete)
+        saveFilesToStore(afterDelete)
+        tabClose(id)
+      })
+    }
   }
 
-  const updateFileName = (id, title) => {
+  const updateFileName = (id, title, isNew) => {
     // 循环
     // const newFiles = files.map( file => {
     //   if(file.id === id) {
@@ -96,8 +131,30 @@ function App() {
     //   return file
     // })
     // setFiles(newFiles)
-    const modifiedFile = { ...files[id], title, isNew: false }
-    setFiles({ ...files, [id]: modifiedFile })
+    const newPath = join(savedLocation, `${title}.md`)
+    const modifiedFile = { ...files[id], title, isNew: false, path: newPath }
+    const newFiles = { ...files, [id]: modifiedFile }
+    if(isNew) {
+      // fileHelper.writeFile(join(savedLocation, `${title}.md`), files[id].body).then(() => {
+      fileHelper.writeFile(newPath, files[id].body).then(() => {
+        // setFiles({ ...files, [id]: modifiedFile })
+        setFiles(newFiles)
+        // 做数据持久化
+        saveFilesToStore(newFiles)
+      })
+    } else {
+      const oldPath = join(savedLocation, `${files[id].title}.md`)
+      // fileHelper.renameFile(join(savedLocation, `${files[id].title}.md`), 
+      // join(savedLocation, `${title}.md`)).then(() => {
+        // setFiles({ ...files, [id]: modifiedFile })
+      //})
+      fileHelper.renameFile(oldPath, newPath).then(() => {
+        setFiles()
+        // 做数据持久化
+        saveFilesToStore(newFiles)
+      })
+
+    }
   }
 
   // const fileChange = (id, value) => {
@@ -153,6 +210,12 @@ function App() {
     setFiles({ ...files, [newID]: newFile })
   }  
 
+  const saveCurrentFile = () => {
+    fileHelper.writeFile(join(savedLocation, `${activeFile.title}.md`), activeFile.body).then(() => {
+      setUnsavedFileIDs(unsavedFileIDs.filter(id => id !== activeFile.id))
+    })
+  }
+
   return (
     <div className="App container-fluid px-0">
       <div className="row no-gutters">
@@ -207,6 +270,12 @@ function App() {
                 options={{
                   minHeight: '515px',
                 }}
+              />
+              <BottomBtn 
+                text="保存"
+                colorClass="btn-success"
+                icon={faFileImport}
+                onBtnClick={saveCurrentFile}
               />
             </>
           }

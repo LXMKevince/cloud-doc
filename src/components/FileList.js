@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2020-01-12 15:48:04
- * @LastEditTime : 2020-01-14 23:11:32
+ * @LastEditTime : 2020-01-16 22:16:20
  * @LastEditors  : Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \cloud-doc\src\components\FileList.js
@@ -35,7 +35,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   useEffect(() => {
     const editItem = files.find( file => file.id === editStatus )
     if( enterPressed && editStatus && editValue.trim() !== '') {
-      onSaveEdit(editItem.id, editValue)
+      onSaveEdit(editItem.id, editValue, editItem.isNew)
       setEditStatus(false)
       setEditValue('')
     }
