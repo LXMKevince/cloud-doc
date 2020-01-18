@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2020-01-11 16:56:32
- * @LastEditTime : 2020-01-16 23:56:35
+ * @LastEditTime : 2020-01-18 21:43:08
  * @LastEditors  : Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \cloud-doc\src\App.js
@@ -25,7 +25,7 @@ import { flattenArr, objToArr } from './utils/helper'
 import fileHelper from './utils/fileHelper'
 
 // 引用 node.js 模块
-const { join } = window.require('path')
+const { join, basename, extname, dirname } = window.require('path')
 const { remote } = window.require('electron')
 const Store = window.require('electron-store')
 const fileStore = new Store({'name': 'files Data'})
@@ -75,6 +75,13 @@ function App() {
   const fileClick = (fileID) => {
     // 设置当前激活状态的文件
     setActiveFileID(fileID)
+    const  currentFile = files[fileID]
+    if (!currentFile.isLoaded) {
+      fileHelper.readFile(currentFile.path).then(value => {
+        const newFile = { ...files[fileID], body: value, isLoaded: true }
+        setFiles({ ...files, [fileID]: newFile })
+      })
+    }
     // 当前 openedFileIDs不包含 fileID 则添加新的 flieID 到 openedFileIDs 中
     if(!openedFileIDs.includes(fileID)) {
       setOpenedFileIDs([ ...openedFileIDs, fileID ])
@@ -131,9 +138,12 @@ function App() {
     //   return file
     // })
     // setFiles(newFiles)
-    const newPath = join(savedLocation, `${title}.md`)
+    // newPath 的路径不一样，分成新文件与不是新文件
+    const newPath = isNew ? join(savedLocation, `${title}.md`) 
+                          : join(dirname(files[id].path), `${title}.md`)
     const modifiedFile = { ...files[id], title, isNew: false, path: newPath }
     const newFiles = { ...files, [id]: modifiedFile }
+    // console.log(newFiles)
     if(isNew) {
       // fileHelper.writeFile(join(savedLocation, `${title}.md`), files[id].body).then(() => {
       fileHelper.writeFile(newPath, files[id].body).then(() => {
@@ -143,17 +153,19 @@ function App() {
         saveFilesToStore(newFiles)
       })
     } else {
-      const oldPath = join(savedLocation, `${files[id].title}.md`)
+      // const oldPath = join(savedLocation, `${files[id].title}.md`)
+      const oldPath = files[id].path
       // fileHelper.renameFile(join(savedLocation, `${files[id].title}.md`), 
       // join(savedLocation, `${title}.md`)).then(() => {
         // setFiles({ ...files, [id]: modifiedFile })
       //})
       fileHelper.renameFile(oldPath, newPath).then(() => {
-        setFiles()
+        setFiles(newFiles)
         // 做数据持久化
         saveFilesToStore(newFiles)
+      }).catch(err => {
+        console.log(err)
       })
-
     }
   }
 
@@ -211,8 +223,53 @@ function App() {
   }  
 
   const saveCurrentFile = () => {
-    fileHelper.writeFile(join(savedLocation, `${activeFile.title}.md`), activeFile.body).then(() => {
+    fileHelper.writeFile(activeFile.path, activeFile.body).then(() => {
       setUnsavedFileIDs(unsavedFileIDs.filter(id => id !== activeFile.id))
+    })
+  }
+
+  const importFiles = () => {
+    remote.dialog.showOpenDialog({
+      title: '选择导入 MarkDown 文档',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        {name: 'Markdown files', extensions: ['md']}
+      ]
+    }).then( (paths) => {
+      // console.log(paths.filePaths)
+      const filePaths = paths.filePaths
+      if(Array.isArray(filePaths)) {
+        const filteredPaths = filePaths.filter(path => {
+          const alreadyAdded = Object.values(files).find(file => {
+            return file.path === path
+          })
+          return !alreadyAdded
+        })
+        // 拿到 path 的数组，扩展数组 [{id: '1', path: '', title: ''}, {xxxx}]
+        const importFilesArr = filteredPaths.map(path => {
+          return {
+            id: uuidv4(),
+            title: basename(path, extname(path)),
+            path,
+          }
+        })
+        //console.log(importFilesArr)
+        // 在 flattenArr 中获取新的 files 对象
+        const newFiles = { ...files, ...flattenArr(importFilesArr) }
+        // console.log(newFiles)
+        // 设置导入成功状态，保密柜更新 electron store
+        setFiles(newFiles)
+        saveFilesToStore(newFiles)
+        if(importFilesArr.length>0) {
+          remote.dialog.showMessageBox({
+            type: 'info',
+            title: `成功导入${importFilesArr.length}个文件`,
+            message: `成功导入${importFilesArr.length}个文件`
+          })
+        }
+      }
+    }).catch(err => {
+      console.log(err)
     })
   }
 
@@ -244,6 +301,7 @@ function App() {
                 text="导入"
                 colorClass="btn-success"
                 icon={faFileImport}
+                onBtnClick={importFiles}
               />
             </div>
           </div>

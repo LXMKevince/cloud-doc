@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2020-01-12 15:48:04
- * @LastEditTime : 2020-01-16 22:16:20
+ * @LastEditTime : 2020-01-18 23:11:12
  * @LastEditors  : Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: \cloud-doc\src\components\FileList.js
@@ -11,7 +11,16 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEdit, faTrash, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { faMarkdown } from '@fortawesome/free-brands-svg-icons'
 import PropTypes from 'prop-types'
+
 import useKeyPress from '../hooks/useKeyPress'
+import uuseContextMenu from '../hooks/useContextMenu'
+import useContextMenu from '../hooks/useContextMenu'
+
+import { getParentNode } from '../utils/helper'
+
+// 加载 nodejs 模块
+// const { remote } = window.require('electron')
+// const { Menu, MenuItem } = remote
 
 const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
 
@@ -73,6 +82,68 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     }
   }, [files])
 
+  const clickedItem = useContextMenu([
+    {
+      label: '打开',
+      click: () => {
+        const parentElement = getParentNode(clickedItem.current, 'file-item')
+        // console.log(parentElement)
+        if(parentElement) {
+          // 根据绑定的属性获取 id
+          onFileClick(parentElement.dataset.id)
+        }
+      }
+    },
+    {
+      label: '重命名',
+      click: () => {
+        const parentElement = getParentNode(clickedItem.current, 'file-item')
+        // console.log(parentElement.dataset.title)
+        if(parentElement) {
+          setEditStatus(parentElement.dataset.id)
+          setEditValue(parentElement.dataset.title)
+        }
+      }
+    },
+    {
+      label: '删除',
+      click: () => {
+        const parentElement = getParentNode(clickedItem.current, 'file-item')
+        if(parentElement) {
+          onFileDelete(parentElement.dataset.id)
+        }
+      }
+    }  
+  ], '.file-list', [files])
+  // useEffect(() => {
+  //   const menu = new Menu()
+  //   menu.append(new MenuItem({
+  //     label: '打开',
+  //     click: () => {
+  //       console.log('click')
+  //     }
+  //   }))
+  //   menu.append(new MenuItem({
+  //     label: '重命名',
+  //     click: () => {
+  //       console.log('rename')
+  //     }
+  //   }))
+  //   menu.append(new MenuItem({
+  //     label: '删除',
+  //     click: () => {
+  //       console.log('delete')
+  //     }
+  //   }))
+  //   const handleContextMenu = (e) => {
+  //     menu.popup({ window: remote.getCurrentWindow() })
+  //   }
+  //   window.addEventListener('contextmenu', handleContextMenu)
+  //   return () => {
+  //     window.removeEventListener('contextmenu', handleContextMenu)
+  //   }
+  // })
+
   return (
     <ul className="list-group list-group-flush file-list">
       {
@@ -80,6 +151,8 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
           <li
             className="list-group-item bg-light d-flex align-items-center row file-item mx-0"
             key={file.id}
+            data-id={file.id}
+            data-title={file.title}
           >
             { (file.id !== editStatus && !file.isNew) &&
               <>
