@@ -43,7 +43,7 @@
     ]
   },
   "devDependencies": {
-    "electron": "^7.1.8",
+    "electron": "^7.2.4",
     "electron-is-dev": "^1.1.0",
     "concurrently": "^5.0.2",
     "cross-env": "^6.0.3",
